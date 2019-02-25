@@ -1,0 +1,4 @@
+.gradle/**
+.idea/**
+src/test/resources/sample/.gradle/**
+src/test/resources/sample/build/**

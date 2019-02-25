@@ -1,0 +1,40 @@
+plugins {
+    id 'org.walkmod.scalafix'
+}
+
+apply plugin: 'scala'
+
+ext {
+    scalaBinaryVersion = "2.12"
+    scalaMinorVersion = "8"
+    scalametaVersion = "4.1.4"
+}
+
+configurations {
+    scalaCompilerPlugin
+}
+
+group 'org.foo'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile("org.scala-lang:scala-library:$scalaBinaryVersion.$scalaMinorVersion")
+    scalaCompilerPlugin "org.scalameta:semanticdb-scalac_$scalaBinaryVersion.$scalaMinorVersion:$scalametaVersion"
+}
+
+compileScala {
+    scalaCompileOptions.additionalParameters = ['-Yrangepos'] // required by semanticdb-scalac
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.additionalParameters = [
+            "-Ywarn-unused",
+            "-Xplugin:" + configurations.scalaCompilerPlugin.asPath
+    ]
+}
