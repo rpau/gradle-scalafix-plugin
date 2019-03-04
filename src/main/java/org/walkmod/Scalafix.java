@@ -34,7 +34,7 @@ public class Scalafix extends DefaultTask {
 
   @Input
   private String getSourceRoot() {
-    return getProject().getRootDir().getAbsolutePath();
+    return getProject().getProjectDir().getAbsolutePath();
   }
 
   @Input
