@@ -2,6 +2,7 @@
 buildscript {
     dependencies {
         classpath 'net.researchgate:gradle-release:2.6.0'
+        classpath "com.adtran:scala-multiversion-plugin:1.+"
     }
 }
 
@@ -10,14 +11,11 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-//declare the release plugin
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+//apply plugin: 'signing'
 apply plugin: 'net.researchgate.release'
-
-ext {
-    scalaBinaryVersion = "2.12"
-    scalaMinorVersion = "8"
-    scalametaVersion = "4.1.4"
-}
+apply plugin: "com.adtran.scala-multiversion-plugin"
 
 configurations {
     scalaCompilerPlugin
@@ -30,7 +28,87 @@ repositories {
 }
 
 dependencies {
-    compile("org.scala-lang:scala-library:$scalaBinaryVersion.$scalaMinorVersion")
-    compile group: 'ch.epfl.scala', name: 'scalafix-cli_2.12.8', version: '0.9.4'
+    compile "org.scala-lang:scala-library:$scalaVersion"
+    compile "ch.epfl.scala:scalafix-cli_$scalaVersion:0.9.4"
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+
+// Create a jar with javadoc
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+// Create a jar with soruces
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+// hook all the artifacts under artifacts task
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+/*
+signing {
+    sign configurations.archives
+}*/
+
+def v_ossrhUsername="FOO"
+def v_ossrhPassword="BAR"
+
+if (project.hasProperty("ossrhUsername")) {
+    v_ossrhUsername = ossrhUsername
+}
+if (project.hasProperty("ossrhPassword")) {
+    v_ossrhPassword = ossrhPassword
+}
+//https://docs.gradle.org/current/userguide/publishing_maven.html
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: v_ossrhUsername, password: v_ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: v_ossrhUsername, password: v_ossrhPassword)
+            }
+
+            pom.project {
+                name 'aws-http'
+                packaging 'jar'
+                artifactId archivesBaseName
+                version version
+                description 'A fluent http client library for aws'
+                url 'https://github.com/rpau/gradle-scalafix-plugin'
+
+                scm {
+                    connection 'scm:git:git://github.com/rpau/gradle-scalafix-plugin.git'
+                    developerConnection 'scm:git:git@github.com:rpau/gradle-scalafix-plugin.git'
+                    url 'https://github.com/rpau/gradle-scalafix-plugin'
+                }
+
+                licenses {
+                    license {
+                        name 'MIT License'
+                        url 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'rpau'
+                        name 'Raquel Pau'
+                        email 'rpau@walkmod.com'
+                    }
+                }
+            }
+        }
+    }
 }
