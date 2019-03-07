@@ -101,11 +101,11 @@ uploadArchives {
             }
 
             pom.project {
-                name 'aws-http'
+                name 'gradle-scalafix-plugin'
                 packaging 'jar'
                 artifactId archivesBaseName
                 version version
-                description 'A fluent http client library for aws'
+                description 'A gradle plugin for scalafix'
                 url 'https://github.com/rpau/gradle-scalafix-plugin'
 
                 scm {
