@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class Scalafix extends DefaultTask {
 
   @Input
-  private String getClasspath() {
+  String getClasspath() {
     List<String> classesDir = getProject().getConvention().getPlugin(JavaPluginConvention.class).getSourceSets()
             .stream().flatMap(sourceSet -> sourceSet.getOutput().getClassesDirs().getFiles().stream())
             .map(File::getPath)
@@ -24,7 +24,7 @@ public class Scalafix extends DefaultTask {
   }
 
   @Input
-  private String getAdditionalParameters() {
+  String getAdditionalParameters() {
     List<String> additionalParametersList = getProject().getTasks().withType(ScalaCompile.class).stream().findFirst()
             .map(compile ->
                     compile.getScalaCompileOptions().getAdditionalParameters())
@@ -33,7 +33,7 @@ public class Scalafix extends DefaultTask {
   }
 
   @Input
-  private String getSourceRoot() {
+  String getSourceRoot() {
     return getProject().getProjectDir().getAbsolutePath();
   }
 
