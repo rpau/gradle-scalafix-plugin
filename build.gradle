@@ -34,17 +34,6 @@ dependencies {
 }
 
 
-compileScala {
-    scalaCompileOptions.additionalParameters = ['-Yrangepos'] // required by semanticdb-scalac
-}
-
-tasks.withType(ScalaCompile) {
-    scalaCompileOptions.additionalParameters = [
-            "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
-            "-Ywarn-unused"
-    ]
-}
-
 // Create a jar with javadoc
 task javadocJar(type: Jar) {
     classifier = 'javadoc'
