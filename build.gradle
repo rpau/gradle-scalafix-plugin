@@ -11,8 +11,6 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-
-apply plugin: 'scala'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 //apply plugin: 'signing'
