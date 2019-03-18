@@ -6,6 +6,8 @@ cache:
   - "$HOME/.gradle/wrapper/dists/"
 script:
 - "./gradlew build"
+- "./gradlew publish -PscalaVersions=2.11.12"
+- "./gradlew publish -PscalaVersions=2.12.8"
 before_install:
 - openssl aes-256-cbc -K $encrypted_cb0451a0522d_key -iv $encrypted_cb0451a0522d_iv
   -in secring.gpg.enc -out ~/.gnupg/secring.gpg -d
