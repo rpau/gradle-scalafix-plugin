@@ -11,9 +11,8 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-apply plugin: 'maven'
 apply plugin: 'maven-publish'
-//apply plugin: 'signing'
+apply plugin: 'signing'
 apply plugin: 'net.researchgate.release'
 apply plugin: "com.adtran.scala-multiversion-plugin"
 
@@ -33,82 +32,88 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-
-// Create a jar with javadoc
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compileClasspath
 }
 
-// Create a jar with soruces
-task sourcesJar(type: Jar) {
+task sourceJar(type: Jar) {
     classifier = 'sources'
-    from sourceSets.main.allSource
+    from sourceSets.main.allJava
 }
 
-// hook all the artifacts under artifacts task
-artifacts {
-    archives javadocJar, sourcesJar
+task packageJavadoc(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
 }
 
-/*
-signing {
-    sign configurations.archives
-}*/
-
-def v_ossrhUsername="FOO"
-def v_ossrhPassword="BAR"
-
-if (project.hasProperty("ossrhUsername")) {
-    v_ossrhUsername = ossrhUsername
+ext {
+    v_ossrhUsername = System.getenv('SONATYPE_USER')
+    ossrhPassword = System.getenv('SONATYPE_TOKEN')
 }
-if (project.hasProperty("ossrhPassword")) {
-    v_ossrhPassword = ossrhPassword
-}
-//https://docs.gradle.org/current/userguide/publishing_maven.html
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: v_ossrhUsername, password: v_ossrhPassword)
+            artifact sourceJar {
+                classifier "sources"
             }
 
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: v_ossrhUsername, password: v_ossrhPassword)
-            }
+            artifact packageJavadoc
 
-            pom.project {
-                name 'gradle-scalafix-plugin'
-                packaging 'jar'
-                artifactId archivesBaseName
-                version version
-                description 'A gradle plugin for scalafix'
-                url 'https://github.com/rpau/gradle-scalafix-plugin'
-
-                scm {
-                    connection 'scm:git:git://github.com/rpau/gradle-scalafix-plugin.git'
-                    developerConnection 'scm:git:git@github.com:rpau/gradle-scalafix-plugin.git'
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name "gradle-scalafix-plugin_${scalaVersion}"
+                    description 'A library to run scalafix'
                     url 'https://github.com/rpau/gradle-scalafix-plugin'
-                }
-
-                licenses {
-                    license {
-                        name 'Apache 2 License'
-                        url 'https://www.apache.org/licenses/LICENSE-2.0'
+                    scm {
+                        url 'https://github.com/rpau/gradle-scalafix-plugin'
+                        connection 'https://github.com/rpau/gradle-scalafix-plugin.git'
+                    }
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'rpau'
+                            name 'Raquel Pau'
+                            email 'rpau@walkmod.com'
+                        }
                     }
                 }
+            }
 
-                developers {
-                    developer {
-                        id 'rpau'
-                        name 'Raquel Pau'
-                        email 'rpau@walkmod.com'
+            repositories {
+                maven {
+                    credentials {
+                        username "${v_ossrhUsername}"
+                        password "${ossrhPassword}"
                     }
+
+                    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 }
             }
         }
     }
+}
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        allprojects {
+            ext."signing.keyId" = "53E1A142"
+            ext."signing.secretKeyRingFile" = System.getenv('HOME') + "/.gnupg/secring.gpg"
+            ext."signing.password" = System.getenv('SIGNATURE_PWD')
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
 }
